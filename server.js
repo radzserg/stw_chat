@@ -8,6 +8,7 @@ var uuid = require('node-uuid');
 var _ = require('underscore');
 var logger = require('intel');
 var fs = require('fs');
+var sanitizeHtml = require('sanitize-html');
 
 var config = require('./app/config.json');
 if (fs.existsSync('./app/config.local.json')) {
@@ -56,8 +57,6 @@ var User = require('./app/models/user.js');
  */
 io.use(function(socket, next) {
 
-    /**
-     * TBD
     var handshakeData = socket.request;
 
     var query = handshakeData._query;
@@ -67,23 +66,22 @@ io.use(function(socket, next) {
         next(new Error('not authorized'));
     }
 
-    User.findOne({"profile_id": id}, function(err, profile) {
+    User.findOne({"_id": id}, function(err, user) {
         if (err) {
             logger.error(err);
             return next(new Error('not authorized'));
         }
-        if (!profile) {
-            next(new Error('not authorized'));
+        if (!user) {
+            return next(new Error('not authorized'));
         }
 
-        if (profile.checkAuthToken(token)) {
-            socket.profile = profile;
+        if (user.checkAuthToken(token)) {
+            socket.user = user;
             next();
         } else {
             return next(new Error('not authorized'));
         }
     })
-     */
 });
 
 // reset online sockets stat
@@ -145,6 +143,23 @@ io.sockets.on('connection', function (socket) {
     });
 
     /**
+     * Send to chat members event to start chat with chat room.
+     * @param chat
+     */
+    var startChat = function(chat) {
+        _.each(chat.user_ids, function(userId) {
+            User.getOnlineSockets(userId, function (userIds) {
+                _.each(userIds, function (socketId) {
+                    var socket = io.sockets.connected[socketId];
+                    if (socket) {
+                        socket.joinChatRoom(chat);
+                    }
+                })
+            });
+        });
+    };
+
+    /**
      * Join socket to chat room
      * @param socket
      * @param room
@@ -152,43 +167,82 @@ io.sockets.on('connection', function (socket) {
     socket.joinChatRoom = function(chat) {
         var room = chat.room;
 
+        // if user closed chat and initiate it again - emit to client again
+        socket.emit("start_chat", chat);
+
         // skip if already in room
         var alreadyInRoom = undefined !== _.find(socket.rooms, function(socketRoom) {
             return socketRoom == room;
-        })
+        });
         if (alreadyInRoom) {
             return;
         }
 
-        socket.join(room).emit('start_chat', chat);
+        socket.join(room);
+    };
 
-        Chat.findOne({'room': room }, function (err, chat) {
+    /**
+     * When we get new message from socket - resend it to all members of chat room
+     */
+    socket.on('message', function(data) {
+        var message = sanitizeHtml(data.message).trim();
+        if (message == '') {
+            return ;
+        }
+        Chat.findOne({'room': data.room }, function (err, chat) {
             if (err) {
                 return logger.error(err);
             }
 
-            socket.on('message', function(data) {
-                var chatMessage = new ChatMessage({
-                    chat_id: chat._id,
-                    user_id: data.userId,
-                    message: data.message
-                });
-                chatMessage.save(function (err, chatMessage) {
-                    if (err) {
-                        return logger.error(err);
-                    }
+            if (!chat) {
+                return logger.error("Chat is not found. Room ID" + data.room);
+            }
 
-                    io.sockets.to(chat.room).emit('message', {
-                        "room": chat.room,
-                        "message": data.message,
-                        "time": chatMessage.created_at,
-                        "userId": socket.user.id
-                    });
+            startChat(chat);
+
+            var chatMessage = new ChatMessage({
+                "chat_id": chat._id,
+                "user_id": socket.user._id,
+                "message": message
+            });
+            chatMessage.save(function (err, chatMessage) {
+                if (err) {
+                    return logger.error(err);
+                }
+
+                chat.last_message_time = chatMessage.created_at;
+                chat.save();
+
+                io.sockets.to(chat.room).emit('message', {
+                    "room": chat.room,
+                    "message": chatMessage.message,
+                    "time": chatMessage.created_at,
+                    "user_id": socket.user._id
                 });
             });
         })
-    };
+    });
 
+    /**
+     * Generic search - profiles and archived chats
+     */
+    socket.on("search", function(q, cb) {
+        var criteria = {
+            "_id": {"$ne": socket.user._id.toString()},
+            "username": new RegExp(q, 'i')
+        };
+        User.find(criteria).limit(20).exec(function (err, users) {
+            if (err) {
+                return logger.error(err);
+            }
+            cb(users);
+        });
+    });
+
+
+    /**
+     * On disconnect
+     */
     socket.on('disconnect', function() {
         socket.user.offline(socket.id);
     });

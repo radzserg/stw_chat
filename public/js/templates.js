@@ -1,5 +1,32 @@
 this["JST"] = this["JST"] || {};
 
+this["JST"]["chat/found_user"] = function(obj) {
+obj || (obj = {});
+var __t, __p = '', __e = _.escape, __j = Array.prototype.join;
+function print() { __p += __j.call(arguments, '') }
+with (obj) {
+__p += '<div class="member clearfix start_chat" data-id="' +
+((__t = ( id )) == null ? '' : __t) +
+'" id="found_chat_' +
+((__t = ( room )) == null ? '' : __t) +
+'">\n    <div class="member-inner clearfix">\n        ';
+ if (fileUrl) { ;
+__p += '\n            <div class="user-img chat_avatar">\n                <img src="' +
+((__t = ( fileUrl )) == null ? '' : __t) +
+'" alt="" />\n            </div>\n        ';
+ } ;
+__p += '\n        <div class="member-content">\n            <h3>' +
+((__t = ( chat_name )) == null ? '' : __t) +
+'</h3>\n\n            <article class="status">' +
+((__t = ( last_message )) == null ? '' : __t) +
+'</article>\n        </div>\n\n        <div class="time">' +
+((__t = ( last_message_time )) == null ? '' : __t) +
+'</div>\n\n    </div>\n</div>';
+
+}
+return __p
+};
+
 this["JST"]["chat/index"] = function(obj) {
 obj || (obj = {});
 var __t, __p = '', __e = _.escape;

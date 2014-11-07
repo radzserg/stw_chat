@@ -27,6 +27,35 @@ userSchema.options.toJSON.transform = function (doc, ret, options) {
     delete ret.auth_key;
 }
 
+
+/**
+ * Pre save model
+ */
+userSchema.pre('save', function (next) {
+    now = new Date();
+    this.updated_at = now;
+    if ( !this.created_at ) {
+        this.created_at = now;
+    }
+    next();
+});
+
+/**
+ * Check user authorization with token
+ * @param token
+ * @returns {boolean}
+ */
+userSchema.methods.checkAuthToken = function(token) {
+    /*
+    I suggest to use someyhing more complex
+    var hash = this.auth_key + this.username;
+    var realToken = crypto.createHash('sha256')
+        .update(hash, 'utf8')
+        .digest();
+     */
+    return this.auth_key = token;
+};
+
 /**
  * Save new user's socket connection
  * @param userId
@@ -34,8 +63,6 @@ userSchema.options.toJSON.transform = function (doc, ret, options) {
  */
 userSchema.methods.online = function(socketId) {
     this.online_sockets.push(socketId);
-
-    this.updated_at = new Date();
     this.save(function (err, user) {
         if (err) {
             logger.error(err);
@@ -53,7 +80,6 @@ userSchema.methods.offline = function(socketId) {
     if (index > -1) {
         this.online_sockets.splice(index, 1);
     }
-    this.updated_at = new Date();
     this.save(function (err, user) {
         if (err) {
             logger.error(err);

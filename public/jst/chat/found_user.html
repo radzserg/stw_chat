@@ -1,0 +1,17 @@
+<div class="member clearfix start_chat" data-id="<%= id %>" id="found_chat_<%= room %>">
+    <div class="member-inner clearfix">
+        <% if (fileUrl) { %>
+            <div class="user-img chat_avatar">
+                <img src="<%= fileUrl %>" alt="" />
+            </div>
+        <% } %>
+        <div class="member-content">
+            <h3><%= chat_name %></h3>
+
+            <article class="status"><%= last_message %></article>
+        </div>
+
+        <div class="time"><%= last_message_time %></div>
+
+    </div>
+</div>

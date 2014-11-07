@@ -67,6 +67,40 @@ window.chat = (function($) {
 
         var chatDialogHomeHtml = JST['chat/index']();
         $("#content").append(chatDialogHomeHtml);
+
+
+        (function initChatHomePage() {
+            var foundProfileTemplate = JST['chat/found_user'];
+
+            $("#chat_search_profiles").on("change", function() {
+                var q = $(this).val();
+                var $chatWindow = $("#chat_index");
+                var $members = $chatWindow.find(".chat-members");
+                $members.empty();
+
+                if (q.length >= 2) {
+                    socket.emit('search', q, function(users) {
+
+                        _.each(users, function(user) {
+                            var chatData = {
+                                "room": null,
+                                "id": user._id,
+                                "chat_name": user.username,
+                                "fileUrl": user.avatar ? "/images/avatars/" + user.avatar : null,
+                                "last_message": null,
+                                "last_message_time": null
+                            }
+                            var html = foundProfileTemplate(chatData);
+                            $members.append(html);
+                        });
+                    });
+                }
+                return false;
+            })
+        })();
+
+
+
     }
 
     return pub;
