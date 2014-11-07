@@ -1,0 +1,9 @@
+{
+    "port": 3000,
+    "mongodsn": "mongodb://localhost/stw_chat",
+
+    "logger": {
+        "level": "INFO"
+    }
+
+}
