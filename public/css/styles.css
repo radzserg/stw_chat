@@ -58,3 +58,8 @@
 #users_title {
     margin-top: 20px;
 }
+
+.choose-another-user {
+    margin: 8px;
+    display: block;
+}

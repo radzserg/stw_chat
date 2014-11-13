@@ -5,6 +5,8 @@ $(document).ready(function() {
 
     var users = [];
 
+    $( "#chat_index" ).draggable();
+
     (function loadUsers() {
         $.ajax({
             "type": "GET",
@@ -34,8 +36,8 @@ $(document).ready(function() {
 
     (function logout() {
         $(document).on("click", ".logout", function() {
-            $.removeCookie("userId");
-            $.removeCookie("token");
+            $("#logged_in_wrapper").empty();
+            $("#users_title").text("So choose your hero");
             renderUsers();
         });
     })();
@@ -52,18 +54,33 @@ $(document).ready(function() {
     };
 
     /**
+     * Just a fast way to choose another hero
+     */
+    $(document).on('click', '.choose-another-user', function() {
+        var username = $(this).text();
+        $("#chat_search_profiles").val(username).trigger('change');
+    });
+
+    /**
      * Render logged in user block
      * @param userId
      */
     function renderLoggedInUser(userId) {
         $("#users").empty();
-        var otherUsers = _.filter(users, function(user) {
-            return user.id !== userId;
-        })
-        var usernames = _.pluck(otherUsers, 'username');
+        var otherUsersHtml = [];
+        _.each(users, function(user) {
+            if (user._id == userId) {
+                return ;
+            }
+            var a = $('<a>', {href: "javascript:void(0)", "data-id": user._id, "class": 'choose-another-user'}).text(user.username);
+            var t = a.prop('outerHtml');
+            otherUsersHtml.push(a.prop('outerHTML'));
+        });
 
-        $("#users_title").html('Open <a href="#" target="_blank">new tab</a> and log in as other user to start chat.'
-            + " Choose from: <br /><br />" + usernames.join('<br />') + '.');
+        $("#users_title").html('Start typing username or click on user names below. ' + otherUsersHtml.join(' ')
+            + ' Then open new tab, log in as chosen user and chat'
+        );
+
         var loggedInHtml = JST['user/logged_in'](users[userId]);
         $("#logged_in_wrapper").empty().append(loggedInHtml);
     }

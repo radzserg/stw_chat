@@ -1,5 +1,5 @@
 .chat-window {
-    position: fixed;
+    position: absolute;
     height: 570px;
     bottom: 1px;
     right: 15%;

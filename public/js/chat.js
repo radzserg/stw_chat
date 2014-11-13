@@ -67,6 +67,7 @@ window.chat = (function($) {
 
         var chatDialogHomeHtml = JST['chat/index']();
         $("#content").append(chatDialogHomeHtml);
+        $("#chat_index").draggable();
 
 
         (function initChatHomePage() {
