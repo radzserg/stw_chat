@@ -59,6 +59,7 @@ $(document).ready(function() {
     $(document).on('click', '.choose-another-user', function() {
         var username = $(this).text();
         $("#chat_search_profiles").val(username).trigger('change');
+        $("#chat_index").show();
     });
 
     /**

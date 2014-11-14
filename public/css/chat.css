@@ -13,7 +13,6 @@
     display: none;
 }
 .chat-window.collapsed .chat-heading .chat-collapse {
-    top: -15px;
 }
 .chat-window.collapsed {
     height: 40px;
@@ -106,7 +105,7 @@
     border: none;
     overflow: hidden;
     resize: none;
-    padding: 10px 40px;
+    padding: 10px;
     width: 100%;
     color: #606366;
 }

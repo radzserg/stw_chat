@@ -1,0 +1,15 @@
+<div class="message clearfix">
+    <div class="message-inner clearfix">
+        <% if (avatar_url) { %>
+        <div class="user-img">
+            <img src="/images/avatars/<%= avatar %>" alt="" />
+        </div>
+        <% } %>
+        <div class="message-content__wrapper">
+            <div class="message-content">
+                <%= message %>
+            </div>
+            <ins class="time"><%= chat.formatTime(time) %></ins>
+        </div>
+    </div>
+</div>

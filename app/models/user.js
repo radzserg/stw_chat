@@ -4,7 +4,6 @@ var Schema = mongoose.Schema;
 var logger = require('intel');
 
 var userSchema = new Schema({
-        "user_id": Number,
         "username": String,
         "auth_key": {type: String, toJSON: false},
         "online_sockets": {type: [String]},
@@ -99,8 +98,8 @@ userSchema.statics.resetOnlineSockets = function() {
     });
 };
 
-userSchema.statics.getOnlineSockets = function(userId, cb) {
-    this.findOne({ "user_id": userId }, function(err, user) {
+userSchema.statics.getOnlineSockets = function(_id, cb) {
+    this.findOne({ "_id": _id.toString() }, function(err, user) {
         if (err) {
             return logger.error(err);
         }

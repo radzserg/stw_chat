@@ -239,6 +239,41 @@ io.sockets.on('connection', function (socket) {
         });
     });
 
+    /**
+     * Return chat info
+     */
+    socket.on("chat_info", function(room, cb) {
+        getProfileChat(room, function(chat) {
+            if (!chat) {
+                return cb(null);
+            }
+            chat.info(function(err, chat) {
+                return cb(chat);
+            })
+        });
+    });
+
+    /**
+     * Return profile chat
+     * @param room
+     */
+    var getProfileChat = function(room, cb) {
+        Chat.findOne({'room': room }, function (err, chat) {
+            if (err) {
+                return logger.error(err);
+            }
+
+            if (!chat) {
+                return cb(null)
+            }
+
+            if (!chat.isMember(socket.user._id)) {
+                return cb(null)
+            }
+
+            return cb(chat);
+        })
+    };
 
     /**
      * On disconnect
