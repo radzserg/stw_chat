@@ -24,8 +24,10 @@ MongoClient.connect(config.mongodsn, function(err, db) {
         {"username": "R2D2", "avatar": "r2d2.jpg", "auth_key": uuid.v4()},
         {"username": "yoda", "avatar": "yoda.jpg", "auth_key": uuid.v4()}
     ];
+
     var userCollection = db.collection('users');
     userCollection.drop();
+
     var insertProfiles = new Promise(function (resolve, reject) {
         userCollection.insert(users, function(err, users) {
             if (err) {
@@ -39,6 +41,7 @@ MongoClient.connect(config.mongodsn, function(err, db) {
     var chats = [];
     var chatCollection = db.collection('chats');
     chatCollection.drop();
+    /**
     var insertChats = new Promise(function (resolve, reject) {
         chatCollection.insert(chats, function(err, chats) {
             if (err) {
@@ -48,9 +51,12 @@ MongoClient.connect(config.mongodsn, function(err, db) {
             }
         })
     });
+    */
 
+    var chatMessagesCollection = db.collection('chat_messages');
+    chatMessagesCollection.drop();
 
-    Promise.all([insertProfiles, insertChats]).done(function (results) {
+    Promise.all([insertProfiles]).done(function (results) {
         console.log("Seed data has been successfully loaded");
         db.close();
         process.exit();

@@ -55,7 +55,7 @@ var __t, __p = '', __e = _.escape, __j = Array.prototype.join;
 function print() { __p += __j.call(arguments, '') }
 with (obj) {
 __p += '<div class="message clearfix">\n    <div class="message-inner clearfix">\n        ';
- if (avatar_url) { ;
+ if (avatar) { ;
 __p += '\n        <div class="user-img">\n            <img src="/images/avatars/' +
 ((__t = ( avatar )) == null ? '' : __t) +
 '" alt="" />\n        </div>\n        ';
@@ -64,7 +64,7 @@ __p += '\n        <div class="message-content__wrapper">\n            <div class
 ((__t = ( message )) == null ? '' : __t) +
 '\n            </div>\n            <ins class="time">' +
 ((__t = ( chat.formatTime(time) )) == null ? '' : __t) +
-'</ins>\n        </div>\n    </div>\n</div>\n';
+'</ins>\n        </div>\n    </div>\n</div>';
 
 }
 return __p

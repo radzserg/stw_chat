@@ -3,7 +3,7 @@ var Schema = mongoose.Schema;
 
 var chatMessageSchema = new Schema({
     chat_id: {type: Schema.Types.ObjectId, ref: 'Chat'},
-    user_id: Number,
+    user_id: {type: Schema.Types.ObjectId, ref: 'User'},
     message: String,
     created_at: { type: Date, default: Date.now }
 });

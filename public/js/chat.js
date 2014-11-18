@@ -8,7 +8,7 @@ window.chat = (function($) {
 
     var socketBaseUrl;
     var userToken;
-    var userId;
+    var currentUserId;
 
     var pub = {
         init: function(baseUrl, id, token) {
@@ -68,13 +68,17 @@ window.chat = (function($) {
                 return 'Chat with ' + otherUserNames.join(', ');
             },
 
+            getUser: function(userId) {
+                return _.findWhere(data.users, {"_id": userId});
+            },
+
             isMultiChat: function() {
                 return data.users.length > 2;
             },
 
             otherUsers: function() {
                 return _.filter(data.users, function(user) {
-                    return user._id != userId;
+                    return user._id != currentUserId;
                 })
             }
         }
@@ -93,7 +97,7 @@ window.chat = (function($) {
             new Error("Socket server base URL must be specified");
         }
         if (typeof id !== 'undefined') {
-            userId = id;
+            currentUserId = id;
         } else {
             new Error("User ID must be specified");
         }
@@ -110,7 +114,7 @@ window.chat = (function($) {
     var initChat = function() {
 
         var socket = io(socketBaseUrl, {
-            query: "id=" + userId + "&token=" + userToken
+            query: "id=" + currentUserId + "&token=" + userToken
         });
 
         var chatDialogHomeHtml = JST['chat/index']();
@@ -195,7 +199,7 @@ window.chat = (function($) {
          */
         socket.on('message', function(data) {
             openChat(data.chat, function() {
-                appendMessage(data.room, data.user_id, data.message, data.time);
+                appendMessage(data.chat, data.user_id, data.message, data.time);
             })
         });
 
@@ -208,10 +212,13 @@ window.chat = (function($) {
          * Open new chat dialog
          * @param chat
          */
-        function openChat(chat) {
+        function openChat(chat, cb) {
             var chatId = "chat_" + chat.room;
             if ($("#" + chatId).length) {
                 $("#" + chatId).show();
+                if (typeof cb !== 'undefined') {
+                    cb();
+                }
                 return ;
             }
 
@@ -251,7 +258,10 @@ window.chat = (function($) {
                 var lastMessages = chatData.last_messages.reverse();
                 for (var i in lastMessages) {
                     var chatMessage = chatData.last_messages[i];
-                    appendMessage(chatData.room, chatMessage.profile_id, chatMessage.message, chatMessage.created_at);
+                    appendMessage(chatData, chatMessage.user_id, chatMessage.message, chatMessage.created_at);
+                }
+                if (typeof cb !== 'undefined') {
+                    cb();
                 }
             })
 
@@ -264,22 +274,22 @@ window.chat = (function($) {
 
         /**
          * Append new message
-         * @param room
-         * @param profileId
+         * @param chatData
+         * @param userId
          * @param message
          * @param time
          */
-        function appendMessage(room, profileId, message, time) {
+        function appendMessage(chatData, userId, message, time) {
+            var chat = Chat(chatData);
             var messageTemplate = JST['chat/message'];
             var replyTemplate = JST['chat/reply'];
 
-            var $chatWindow = $("#chat_" + room);
+            var $chatWindow = $("#chat_" + chatData.room);
             var $chatMessages = $chatWindow.find('.chat-messages');
-            message = translateMessage(message);
-            if (profileId != currentProfileId) {
-                var profile = $chatWindow.data("invited_profile");
+            if (userId != currentUserId) {
+                var senderUser = chat.getUser(userId);
                 var message = messageTemplate({
-                    "avatar_url": profile.avatar_url,
+                    "avatar": senderUser.avatar,
                     "message": message,
                     "time": time
                 });

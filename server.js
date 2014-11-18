@@ -9,6 +9,25 @@ var _ = require('underscore');
 var logger = require('intel');
 var fs = require('fs');
 var sanitizeHtml = require('sanitize-html');
+var sorter = require('./app/services/sorter.js');
+
+Object.defineProperty(global, '__stack', {
+    get: function(){
+        var orig = Error.prepareStackTrace;
+        Error.prepareStackTrace = function(_, stack){ return stack; };
+        var err = new Error;
+        Error.captureStackTrace(err, arguments.callee);
+        var stack = err.stack;
+        Error.prepareStackTrace = orig;
+        return stack;
+    }
+});
+
+Object.defineProperty(global, '__line', {
+    get: function(){
+        return __stack[1].getLineNumber();
+    }
+});
 
 var config = require('./app/config.json');
 if (fs.existsSync('./app/config.local.json')) {
@@ -68,7 +87,7 @@ io.use(function(socket, next) {
 
     User.findOne({"_id": id}, function(err, user) {
         if (err) {
-            logger.error(err);
+            logger.error("File" + __filename + " line " + __line + err);
             return next(new Error('not authorized'));
         }
         if (!user) {
@@ -98,11 +117,11 @@ io.sockets.on('connection', function (socket) {
         var toUserId = data.toUserId;
 
         // sort user ids. Then we can use this condition to find chat between existed users.
-        var userIds = [socket.user.id, toUserId].sort(function(a, b){return a-b});
+        var userIds = [socket.user.id, toUserId].sort(sorter.alphanum);
 
         Chat.findOne({'user_ids': userIds }, function (err, chat) {
             if (err) {
-                return logger.error(err);
+                return logger.error("File" + __filename + " line " + __line + err);
             }
 
             if (!chat) {
@@ -114,7 +133,7 @@ io.sockets.on('connection', function (socket) {
                 });
                 chat.save(function (err, chat) {
                     if (err) {
-                        return logger.error(err);
+                        return logger.error("File" + __filename + " line " + __line + err);;
                     }
 
                     startChat(chat);
@@ -190,7 +209,7 @@ io.sockets.on('connection', function (socket) {
         }
         Chat.findOne({'room': data.room }, function (err, chat) {
             if (err) {
-                return logger.error(err);
+                return logger.error("File" + __filename + " line " + __line + err);;
             }
 
             if (!chat) {
@@ -206,17 +225,18 @@ io.sockets.on('connection', function (socket) {
             });
             chatMessage.save(function (err, chatMessage) {
                 if (err) {
-                    return logger.error(err);
+                    return logger.error("File" + __filename + " line " + __line + err);
                 }
 
                 chat.last_message_time = chatMessage.created_at;
                 chat.save();
-
-                io.sockets.to(chat.room).emit('message', {
-                    "chat": chat,
-                    "message": chatMessage.message,
-                    "time": chatMessage.created_at,
-                    "user_id": socket.user._id
+                chat.info(function(err, chat) {
+                    io.sockets.to(chat.room).emit('message', {
+                        "chat": chat,
+                        "message": chatMessage.message,
+                        "time": chatMessage.created_at,
+                        "user_id": socket.user._id
+                    });
                 });
             });
         })
@@ -232,7 +252,7 @@ io.sockets.on('connection', function (socket) {
         };
         User.find(criteria).limit(20).exec(function (err, users) {
             if (err) {
-                return logger.error(err);
+                return logger.error("File" + __filename + " line " + __line + err);;
             }
             cb(users);
         });
@@ -259,7 +279,7 @@ io.sockets.on('connection', function (socket) {
     var getProfileChat = function(room, cb) {
         Chat.findOne({'room': room }, function (err, chat) {
             if (err) {
-                return logger.error(err);
+                return logger.error("File" + __filename + " line " + __line + err);;
             }
 
             if (!chat) {

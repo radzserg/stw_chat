@@ -36,9 +36,12 @@ $(document).ready(function() {
 
     (function logout() {
         $(document).on("click", ".logout", function() {
+            /**
             $("#logged_in_wrapper").empty();
             $("#users_title").text("So choose your hero");
             renderUsers();
+             */
+            window.location.reload();
         });
     })();
 
