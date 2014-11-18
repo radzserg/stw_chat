@@ -2,6 +2,7 @@
 var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
 var Promise = require('promise');
+var _ = require('underscore');
 
 var ChatMessage = require('./chat_message.js');
 var User = require('./user.js');
@@ -17,6 +18,10 @@ var chatSchema = new Schema({
     "updated_at": { type: Date, default: Date.now }
 });
 
+chatSchema.set('toJSON', {
+    virtuals: true
+});
+
 /**
  * Assign chat user objects
  */
@@ -25,6 +30,16 @@ chatSchema.virtual('users').set(function (users) {
 });
 chatSchema.virtual('users').get(function () {
     return this.virtual_users;
+});
+
+/**
+ * Assign last messages to chat
+ */
+chatSchema.virtual('last_messages').set(function (messages) {
+    return this.virtual_last_messages = messages;
+});
+chatSchema.virtual('last_messages').get(function () {
+    return this.virtual_last_messages;
 });
 
 /**
@@ -49,7 +64,7 @@ chatSchema.methods.isMember = function(userId) {
  */
 chatSchema.methods.getUsers = function(cb) {
     var self = this;
-    User.find( {user_id: { $in: this.user_ids}})    // todo this.user_ids to strings
+    User.find( {_id: { $in: this.user_ids}})
         .exec(function(err, users) {
             self.users = users;
             cb(err, users);

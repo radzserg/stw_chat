@@ -94,7 +94,7 @@ io.sockets.on('connection', function (socket) {
     /**
      * Current user invite other to chat
      */
-    socket.on("send_invite", function(data) {
+    socket.on("send_invite", function(data, cb) {
         var toUserId = data.toUserId;
 
         // sort user ids. Then we can use this condition to find chat between existed users.
@@ -118,9 +118,11 @@ io.sockets.on('connection', function (socket) {
                     }
 
                     startChat(chat);
+                    cb(chat);
                 });
             } else {
                 startChat(chat);
+                cb(chat);
             }
 
             /**
@@ -167,9 +169,6 @@ io.sockets.on('connection', function (socket) {
     socket.joinChatRoom = function(chat) {
         var room = chat.room;
 
-        // if user closed chat and initiate it again - emit to client again
-        socket.emit("start_chat", chat);
-
         // skip if already in room
         var alreadyInRoom = undefined !== _.find(socket.rooms, function(socketRoom) {
             return socketRoom == room;
@@ -214,7 +213,7 @@ io.sockets.on('connection', function (socket) {
                 chat.save();
 
                 io.sockets.to(chat.room).emit('message', {
-                    "room": chat.room,
+                    "chat": chat,
                     "message": chatMessage.message,
                     "time": chatMessage.created_at,
                     "user_id": socket.user._id

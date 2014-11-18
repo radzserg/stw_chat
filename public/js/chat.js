@@ -58,6 +58,28 @@ window.chat = (function($) {
         }
     };
 
+    var Chat = function(chatData) {
+        var data = chatData;
+
+        return {
+            getName: function() {
+                var otherUsers = this.otherUsers();
+                var otherUserNames = _.pluck(otherUsers, 'username');
+                return 'Chat with ' + otherUserNames.join(', ');
+            },
+
+            isMultiChat: function() {
+                return data.users.length > 2;
+            },
+
+            otherUsers: function() {
+                return _.filter(data.users, function(user) {
+                    return user._id != userId;
+                })
+            }
+        }
+    }
+
     /**
      * Init config
      * @param baseUrl - socket server base url (http://[domain]:port)
@@ -123,7 +145,14 @@ window.chat = (function($) {
                     });
                 }
                 return false;
-            })
+            });
+
+            $(document).on('keydown', '.chat_message', function(event) {
+                if (event.keyCode == 13 && !event.shiftKey) {
+                    $(this).closest("form").submit();
+                    return false;
+                }
+            });
         })();
 
         function initChatWindow($chatWindow) {
@@ -155,24 +184,19 @@ window.chat = (function($) {
         $(document).on("click", '.start_chat', function() {
             var inviteUserId = $(this).data("user_id");
 
-            socket.emit('send_invite', {
-                "toUserId": inviteUserId
+            socket.emit('send_invite', {"toUserId": inviteUserId}, function(chat) {
+                openChat(chat);
             });
             return false;
-        });
-
-        /**
-         * Someone invites us to chat. Send confirmation that invite received.
-         */
-        socket.on('start_chat', function(chat) {
-            openChat(chat);
         });
 
         /**
          * Get new chat message
          */
         socket.on('message', function(data) {
-            appendMessage(data.room, data.user_id, data.message, data.time);
+            openChat(data.chat, function() {
+                appendMessage(data.room, data.user_id, data.message, data.time);
+            })
         });
 
 
@@ -213,28 +237,21 @@ window.chat = (function($) {
             var $form = $chatWindow.find('form');
             var $message = $form.find("textarea");
 
-            socket.emit("chat_info", chat.room, function(chat) {
-                // next step
-                var profiles = chat.profiles;
-                var invitedProfile;
-                for (var i in profiles) {
-                    if (profiles[i].profile_id != currentProfileId) {
-                        // considering that we have 2 chat members
-                        invitedProfile = profiles[i];
-                        break;
-                    }
-                }
-                var chatName = chat.name ? chat.name : invitedProfile.username;
-                $chatWindow.data("invited_profile", invitedProfile);
+            socket.emit("chat_info", chat.room, function(chatData) {
+                var chat = Chat(chatData);
+
+                var chatName = chat.getName();
+
+                // $chatWindow.data("invited_profile", invitedProfile);
                 $chatWindow.find(".chat-title").text(chatName);
                 $chatWindow.find("textarea").focus();
 
                 $chatWindow.show();
                 // load last messages
-                var lastMessages = chat.last_messages.reverse();
+                var lastMessages = chatData.last_messages.reverse();
                 for (var i in lastMessages) {
-                    var chatMessage = chat.last_messages[i];
-                    appendMessage(chat.room, chatMessage.profile_id, chatMessage.message, chatMessage.created_at);
+                    var chatMessage = chatData.last_messages[i];
+                    appendMessage(chatData.room, chatMessage.profile_id, chatMessage.message, chatMessage.created_at);
                 }
             })
 
